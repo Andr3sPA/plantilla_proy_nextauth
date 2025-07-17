@@ -7,10 +7,12 @@ import { Label } from "@/components/ui/label"
 import React, { useState } from "react" // Import React and useState
 import { signIn } from "next-auth/react" // Import signIn
 import { toast } from "sonner"
+import { useRouter } from "next/navigation" // Import useRouter for navigation
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"form">) {
+  const router = useRouter() // Add router hook
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [response, setResponse] = useState({
@@ -54,8 +56,17 @@ export function LoginForm({
         })
       } else {
         setResponse({ status: "ok", info: "Inicio de sesión exitoso!" })
-        // router.push('/'); // Optional: redirect on success if useRouter is imported and configured
+        router.push('/') // Redirect to home page on successful login
       }
+    }).catch((error) => {
+      console.error("Sign in error:", error)
+      setResponse({
+        status: "error",
+        info: "Error inesperado al iniciar sesión"
+      })
+      toast("Error de conexión", {
+        description: "No se pudo conectar con el servidor"
+      })
     })
   }
 

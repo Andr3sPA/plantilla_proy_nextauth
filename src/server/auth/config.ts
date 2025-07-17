@@ -4,7 +4,7 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import { db } from "@/server/db";
 import { createCaller } from "../api/root";
 import { createTRPCContext } from "../api/trpc";
-
+import type { Role } from "@prisma/client";
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
  * object and keep type safety.
@@ -15,15 +15,10 @@ declare module "next-auth" {
   interface Session extends DefaultSession {
     user: {
       id: string;
+      role: Role;
       // ...other properties
-      // role: UserRole;
     } & DefaultSession["user"];
   }
-
-  // interface User {
-  //   // ...other properties
-  //   // role: UserRole;
-  // }
 }
 
 /**
@@ -67,7 +62,6 @@ export const authConfig = {
           email: credentials.email,
           password: credentials.password,
         });
-
         // If no error and we have user data, return it
         if (user) {
           return user;
@@ -99,11 +93,18 @@ export const authConfig = {
      strategy: "jwt",
    },
   callbacks: {
+    jwt({ token, user }) {
+      if (user && 'role' in user) {
+        token.role = user.role;
+      }
+      return token;
+    },
     session: ({ session, token }) => ({
       ...session,
       user: {
         ...session.user,
         id: token.sub,
+        role: token.role as Role,
       },
     }),
   },
